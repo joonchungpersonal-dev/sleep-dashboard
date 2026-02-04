@@ -844,11 +844,6 @@ def main():
     else:
         st.info("Click 'Generate Analysis' for AI-powered sleep insights.")
 
-    st.divider()
-
-    # Raw Data
-    with st.expander("View Raw Data"):
-        st.dataframe(df, use_container_width=True)
 
 
 if __name__ == "__main__":

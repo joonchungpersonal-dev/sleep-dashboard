@@ -260,9 +260,14 @@ class EightSleepClient:
             # Get timeseries data averages
             timeseries = interval.get("timeseries", {})
 
-            def avg_timeseries(key):
+            def avg_timeseries(key, min_val=None, max_val=None):
                 data = timeseries.get(key, [])
                 values = [v[1] for v in data if v[1] is not None]
+                # Filter to reasonable range if specified
+                if min_val is not None or max_val is not None:
+                    values = [v for v in values
+                              if (min_val is None or v >= min_val)
+                              and (max_val is None or v <= max_val)]
                 return sum(values) / len(values) if values else None
 
             # Get scores
@@ -296,7 +301,7 @@ class EightSleepClient:
                 "light_minutes": stage_durations["light"],
                 "awake_minutes": stage_durations["awake"],
                 "heart_rate_avg": avg_timeseries("heartRate"),
-                "hrv_avg": avg_timeseries("hrv"),
+                "hrv_avg": avg_timeseries("hrv", min_val=10, max_val=150),  # Filter outliers
                 "resp_rate_avg": avg_timeseries("respiratoryRate"),
                 "bed_temp_avg": avg_timeseries("bedTemperature"),
                 "room_temp_avg": avg_timeseries("roomTemperature"),

@@ -349,3 +349,55 @@ def get_eight_sleep_data_sync(email: str, password: str, days: int = 30) -> pd.D
 def test_connection_sync(email: str, password: str) -> dict:
     """Synchronous wrapper for testing connection."""
     return asyncio.run(test_connection(email, password))
+
+
+def get_current_sleep_status(email: str, password: str, timezone: str = LOCAL_TIMEZONE) -> dict:
+    """Get current sleep status and device info for real-time dashboard display."""
+    async def _fetch():
+        client = EightSleepClient(email, password, timezone)
+        try:
+            if not await client.login():
+                return {"error": "Login failed"}
+
+            result = {
+                "connected": True,
+                "user_id": client._user_id,
+            }
+
+            # Get device status
+            status = await client.get_current_device_status()
+            if status and "result" in status:
+                device = status["result"]
+                result["device_status"] = {
+                    "left_heating_level": device.get("leftHeatingLevel"),
+                    "right_heating_level": device.get("rightHeatingLevel"),
+                    "left_target_level": device.get("leftTargetHeatingLevel"),
+                    "right_target_level": device.get("rightTargetHeatingLevel"),
+                    "is_on": device.get("on", False),
+                }
+
+            # Get latest sleep session
+            df = await client.get_sleep_sessions_df(days=1)
+            if not df.empty:
+                latest = df.iloc[0]
+                result["latest_session"] = {
+                    "night_date": str(latest["night_date"]),
+                    "duration_hours": latest["duration_hours"],
+                    "deep_minutes": latest["deep_minutes"],
+                    "rem_minutes": latest["rem_minutes"],
+                    "heart_rate_avg": latest["heart_rate_avg"],
+                    "hrv_avg": latest["hrv_avg"],
+                    "sleep_score": latest["sleep_score"],
+                }
+
+            return result
+        except Exception as e:
+            return {"error": str(e)}
+        finally:
+            await client.close()
+
+    return asyncio.run(_fetch())
+
+
+# Alias for backwards compatibility
+EightSleepAPI = EightSleepClient

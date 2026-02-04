@@ -1,192 +1,90 @@
-# Circadian Analytics Dashboard
+# Eight Sleep Analytics Dashboard
 
-Compare Apple Watch and Eight Sleep data exported from HealthKit to analyze sleep timing, HRV, and heart rate discrepancies between devices.
+A real-time sleep analytics dashboard with direct Eight Sleep API integration, providing clinical-grade sleep metrics and correlation analysis.
 
-## Architecture
+![Python](https://img.shields.io/badge/Python-3.11+-blue)
+![Streamlit](https://img.shields.io/badge/Streamlit-1.30+-red)
+![OAuth2](https://img.shields.io/badge/Auth-OAuth2-green)
 
-```mermaid
-flowchart LR
-    subgraph iPhone
-        AW[Apple Watch] --> AH[Apple Health]
-        ES[Eight Sleep] --> AH
-        AH --> AE[Auto Export App]
-    end
+## What Makes This Unique
 
-    subgraph GCP ["GCP (sleep-health-dashboard)"]
-        AE -->|POST /healthkit-ingest| CF[Cloud Function]
-        CF -->|Write JSON| GCS[(GCS Bucket)]
-        GCS -->|Read| CR[Cloud Run]
-        CR -->|Streamlit| DB[Dashboard]
-    end
+| Feature | Standard Sleep Apps | This Dashboard |
+|---------|---------------------|----------------|
+| Data Source | Apple Health export | Direct Eight Sleep OAuth2 API |
+| Sleep Variability | Not available | SD of onset, wake, midpoint, duration |
+| Hypnogram | Basic or none | Full stage progression with connecting lines |
+| Correlations | Not available | Auto-discovered (Duration↔REM, HRV↔HR) |
+| HRV Accuracy | Raw values (often 300+ms) | Filtered 10-150ms for realistic readings |
+| Multi-session | Averages all sessions | Aggregates per night, filters main sleep |
 
-    subgraph User
-        DB -->|IAP Auth| U[👤 You]
-    end
-```
+## Key Features
 
-## Prerequisites
+### Direct Eight Sleep API Integration
+- **Custom OAuth2 client** - Reverse-engineered the new authentication flow after Eight Sleep deprecated session tokens
+- **Rate limit handling** - Exponential backoff with automatic retry
+- **Token refresh** - Seamless re-authentication on expiry
 
-- **GCP Account** with billing enabled
-- **gcloud CLI** installed and authenticated
-- **Auto Export app** (~$6 on App Store)
-- **Python 3.11+** (for local development)
+### Clinical-Grade Sleep Metrics
+- **Sleep Schedule Variability** - Standard deviation of sleep timing (used in sleep research)
+- **Green/Red indicators** - < 60 min SD = consistent, >= 60 min = variable
+- **Main sleep detection** - Filters to 6PM-6AM window, keeps longest session per night
+
+### Advanced Visualizations
+- **Hypnogram** - Step chart showing sleep stage progression with connecting lines
+- **Correlation scatter plots** - Trend lines with r-values
+- **Apple-style dark theme** - Professional UI matching iOS aesthetics
 
 ## Quick Start
 
-### 1. Clone and Setup
-
 ```bash
+# Clone and setup
 git clone https://github.com/yourusername/circadian-dashboard.git
 cd circadian-dashboard
-```
-
-### 2. Deploy GCP Infrastructure
-
-```bash
-chmod +x infrastructure/setup_gcp.sh
-./infrastructure/setup_gcp.sh
-```
-
-This will:
-- Enable required GCP APIs
-- Create GCS bucket for exports
-- Generate API key
-- Deploy Cloud Function webhook
-- Output configuration for Auto Export app
-
-### 3. Configure Auto Export (iPhone)
-
-1. Purchase Auto Export from App Store
-2. Open Auto Export → Health Metrics → Enable:
-   - Sleep Analysis
-   - Heart Rate
-   - Heart Rate Variability
-   - Respiratory Rate
-3. Go to Export Settings → Format: **JSON**
-4. Go to Automations → Add daily automation at 6:00 AM
-5. Go to Destinations → Add REST API:
-   - URL: `[Cloud Function URL from setup]`
-   - Method: POST
-   - Add Header: `X-API-Key` = `[API Key from setup]`
-6. Test the export
-
-### 4. Deploy Dashboard
-
-```bash
-chmod +x infrastructure/deploy_cloudrun.sh
-./infrastructure/deploy_cloudrun.sh
-```
-
-### 5. Enable IAP (Manual)
-
-1. Go to [IAP Console](https://console.cloud.google.com/security/iap)
-2. Find `circadian-dashboard` service
-3. Toggle IAP ON
-4. Add your Google account as `IAP-secured Web App User`
-
-### 6. Access Dashboard
-
-Visit the Cloud Run URL and authenticate with Google.
-
-## Local Development
-
-### Setup
-
-```bash
 python -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
-```
 
-### Run Dashboard Locally
+# Configure credentials
+echo "EIGHT_SLEEP_EMAIL=your@email.com" > .env
+echo "EIGHT_SLEEP_PASSWORD=yourpassword" >> .env
+echo "EIGHT_SLEEP_ENABLED=true" >> .env
 
-```bash
-# Set environment variable for bucket
-export GCS_BUCKET=sleep-health-dashboard-healthkit-exports
-
-# Run Streamlit
+# Run
 streamlit run src/dashboard/app.py
 ```
 
-### Run Tests
-
-```bash
-pytest tests/ -v
-```
-
-## Project Structure
+## Architecture
 
 ```
 circadian-dashboard/
-├── infrastructure/          # GCP setup and deployment scripts
-│   ├── setup_gcp.sh        # Initial infrastructure setup
-│   └── deploy_cloudrun.sh  # Dashboard deployment
-├── cloud_function/          # Webhook for receiving exports
-│   ├── main.py
-│   └── requirements.txt
-├── config/                  # Application configuration
-│   └── settings.py
 ├── src/
-│   ├── ingestion/          # HealthKit data loading
-│   │   └── healthkit_loader.py
-│   ├── analysis/           # Device comparison logic
-│   │   └── device_comparator.py
-│   └── dashboard/          # Streamlit application
-│       └── app.py
-├── tests/                   # Test suite
-│   ├── test_ingestion.py
-│   ├── test_comparator.py
-│   └── fixtures/
-├── Dockerfile
-├── requirements.txt
-└── README.md
+│   ├── dashboard/
+│   │   └── app.py              # Streamlit dashboard
+│   └── ingestion/
+│       └── eight_sleep_api.py  # Custom OAuth2 API client
+├── config/
+│   └── settings.py             # Environment configuration
+└── docs/
+    ├── TECHNICAL.md            # Implementation details
+    └── SKILLS.md               # Technologies demonstrated
 ```
 
-## Features
+## Dashboard Sections
 
-### Sleep Timing Comparison
-- Dual raster plot showing sleep intervals from both devices
-- Visual comparison of sleep start, end, and midpoint times
-- Duration difference analysis
+1. **Last Night** - Duration, deep/REM (with %), HR, HRV
+2. **30-Day Averages** - Aggregated metrics across all nights
+3. **Sleep Timeline** - 14-day horizontal bar chart
+4. **Hypnogram** - Last night's sleep stage progression
+5. **Sleep Variability** - SD metrics with good/high indicators
+6. **HR & HRV Trends** - Separate charts with 7-day rolling averages
+7. **Correlations** - Duration↔REM, HRV↔HR, HRV↔Awake, Duration↔Deep
+8. **AI Analysis** - Optional Qwen-powered insights (requires Ollama)
 
-### Biometric Comparison
-- Heart Rate Variability (HRV) trends and correlations
-- Resting heart rate comparison
-- Device agreement scatter plots
+## Technical Highlights
 
-### Agreement Analysis
-- Composite agreement score (0-100)
-- Flagged nights with large discrepancies
-- Trend analysis over time
-
-## Configuration
-
-Edit `config/settings.py` to customize:
-
-- `NIGHT_BOUNDARY_HOUR`: When a "night" starts (default: 6 PM)
-- `MIN_SLEEP_DURATION_MINUTES`: Minimum session length (default: 30)
-- `DISCREPANCY_THRESHOLD_MINUTES`: Flag threshold (default: 30)
-- `LOCAL_TIMEZONE`: Your timezone (default: America/New_York)
-
-## Troubleshooting
-
-### No data showing in dashboard
-
-1. Check Auto Export has synced (test export manually)
-2. Verify GCS bucket has files: `gsutil ls gs://sleep-health-dashboard-healthkit-exports/exports/`
-3. Check Cloud Function logs: `gcloud functions logs read healthkit-ingest`
-
-### API Key errors
-
-1. Verify header name is exactly `X-API-Key` (case-sensitive)
-2. Regenerate key: `openssl rand -hex 16` and update Cloud Function env var
-
-### IAP authentication issues
-
-1. Ensure your Google account is added as IAP-secured Web App User
-2. Try incognito window to clear cached credentials
-3. Check IAP is enabled for the Cloud Run service
+See [docs/TECHNICAL.md](docs/TECHNICAL.md) for implementation details.
+See [docs/SKILLS.md](docs/SKILLS.md) for demonstrated technologies.
 
 ## License
 
-MIT
+MIT License

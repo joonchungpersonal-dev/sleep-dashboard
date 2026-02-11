@@ -20,8 +20,8 @@ POST https://client-api.8slp.net/v1/login
 # New (working) approach
 POST https://auth-api.8slp.net/v1/tokens
 {
-    "client_id": "0894c7f33bb94800a03f1f4df13a4f38",
-    "client_secret": "f0954a3ed5763ba3d06834c73731a32f15f168f47d4f164751275def86db0c76",
+    "client_id": "<CLIENT_ID>",
+    "client_secret": "<CLIENT_SECRET>",
     "grant_type": "password",
     "username": "...",
     "password": "..."
@@ -29,7 +29,7 @@ POST https://auth-api.8slp.net/v1/tokens
 # Returns OAuth2 access_token - WORKS
 ```
 
-The client credentials were extracted from the `lukas-clarke/pyEight` fork which had updated for the new auth flow but lacked proper packaging.
+Client credentials are sourced from environment variables (defaults from lukas-clarke/pyEight).
 
 ### Implementation
 ```python

@@ -8,8 +8,8 @@ from dotenv import load_dotenv
 load_dotenv(Path(__file__).parent.parent / ".env")
 
 # GCP Settings
-GCP_PROJECT_ID = os.getenv("GCP_PROJECT_ID", "sleep-health-dashboard")
-GCS_BUCKET_NAME = os.getenv("GCS_BUCKET", "sleep-health-dashboard-healthkit-exports")
+GCP_PROJECT_ID = os.getenv("GCP_PROJECT_ID", "")
+GCS_BUCKET_NAME = os.getenv("GCS_BUCKET", "")
 GCS_EXPORTS_PREFIX = "exports/"
 
 # Eight Sleep API Settings

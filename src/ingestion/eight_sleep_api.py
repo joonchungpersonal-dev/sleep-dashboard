@@ -26,8 +26,8 @@ AUTH_URL = "https://auth-api.8slp.net/v1/tokens"
 CLIENT_API_URL = "https://client-api.8slp.net/v1"
 
 # Default values from lukas-clarke/pyEight (public). Override via env vars if needed.
-KNOWN_CLIENT_ID = os.getenv("EIGHT_SLEEP_CLIENT_ID", "0894c7f33bb94800a03f1f4df13a4f38")
-KNOWN_CLIENT_SECRET = os.getenv("EIGHT_SLEEP_CLIENT_SECRET", "f0954a3ed5763ba3d06834c73731a32f15f168f47d4f164751275def86db0c76")
+KNOWN_CLIENT_ID = os.getenv("EIGHT_SLEEP_CLIENT_ID", "")
+KNOWN_CLIENT_SECRET = os.getenv("EIGHT_SLEEP_CLIENT_SECRET", "")
 
 DEFAULT_HEADERS = {
     "content-type": "application/json",

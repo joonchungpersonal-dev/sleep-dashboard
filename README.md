@@ -56,7 +56,7 @@ A real-time sleep analytics dashboard with direct Eight Sleep API integration, p
 
 ```bash
 # Clone and setup
-git clone https://github.com/joonchungpersonal-dev/sleep-dashboard.git
+git clone https://github.com/chung-lab-miami/sleep-dashboard.git
 cd sleep-dashboard
 python -m venv venv
 source venv/bin/activate
